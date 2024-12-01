@@ -48,6 +48,12 @@ class DetectorProcess(Process):
     def detect(self, led_id: int, view_id: int):
         self._input_queue.put((led_id, view_id))
 
+    def show(self, led_id: int):
+        self._input_queue.put((led_id, -1))
+
+    def hide(self, led_id: int):
+        self._input_queue.put((led_id, -2))
+
     def get_led_count(self):
         return self._led_count.get()
 
@@ -69,18 +75,25 @@ class DetectorProcess(Process):
             if not self._input_queue.empty():
                 set_cam_dark(cam, self._dark_exposure)
                 led_id, view_id = self._input_queue.get()
-                result = enable_and_find_led(
-                    cam,
-                    led_backend,
-                    led_id,
-                    view_id,
-                    timeout_controller,
-                    self._threshold,
-                    self._display,
-                )
+                if view_id == -1:
+                    # Special case to just show the led
+                    led_backend.set_led(led_id, True)
+                elif view_id == -2:
+                    # Special case to just turn off the led
+                    led_backend.set_led(led_id, False)    
+                else:
+                    result = enable_and_find_led(
+                        cam,
+                        led_backend,
+                        led_id,
+                        view_id,
+                        timeout_controller,
+                        self._threshold,
+                        self._display,
+                    )
 
-                for queue in self._output_queues:
-                    queue.put(result)
+                    for queue in self._output_queues:
+                        queue.put(result)
             else:
                 set_cam_default(cam)
                 if self._display:

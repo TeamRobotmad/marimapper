@@ -27,6 +27,7 @@ class Scanner:
         server: str,
         led_start: int,
         led_end: int,
+        infill: bool,
     ):
         logger.debug("initialising scanner")
         self.output_dir = output_dir
@@ -89,7 +90,21 @@ class Scanner:
 
         while True:
 
+            if self.infill:
+                # use the backed to highlight the leds, in the range, which have not been detected
+                leds = self.sfm.get_leds3d()
+                for led_id in self.led_id_range:
+                    # has the led been detected? i.e. is it in the list of 3d leds
+                    if not any(led.led_id == led_id for led in leds):
+                        # if NOT then show it to aid user in targeting camera vies of the missing leds
+                        self.detector.show(led_id)
+
             start_scan = get_user_confirmation("Start scan? [y/n]: ")
+
+            if self.infill:
+                # Ensure all LEDs start in the off state
+                for led_id in self.led_id_range:
+                    self.detector.hide(led_id)
 
             if not start_scan:
                 print("Exiting Marimapper")
