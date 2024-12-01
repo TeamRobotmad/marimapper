@@ -18,6 +18,14 @@ def main():
     add_camera_args(parser)
     add_backend_args(parser)
 
+    # add a boolean argument for "infill" which will be used to determine if the scanner should highlight the LEDs that are not detected
+    parser.add_argument(
+        "--infill",
+        action="store_true",
+        help="Highlight LEDs that are not detected",
+        default=False,
+    )
+
     parser.add_argument("-v", "--verbose", action="store_true")
 
     parser.add_argument(
@@ -45,6 +53,7 @@ def main():
         args.server,
         args.start,
         args.end,
+        args.infill,
     )
 
     scanner.mainloop()
