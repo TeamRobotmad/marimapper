@@ -31,7 +31,7 @@ class Scanner:
     ):
         logger.debug("initialising scanner")
         self.output_dir = output_dir
-
+        self.infill = infill
         self.detector = DetectorProcess(
             device,
             exposure,
@@ -43,7 +43,6 @@ class Scanner:
         self.sfm = SFM()
 
         self.file_writer = FileWriterProcess(self.output_dir)
-
         leds = get_all_2d_led_maps(self.output_dir)
 
         for led in leds:
@@ -92,7 +91,7 @@ class Scanner:
 
             if self.infill:
                 # use the backed to highlight the leds, in the range, which have not been detected
-                leds = self.sfm.get_leds3d()
+                leds = self.file_writer.get_leds()
                 for led_id in self.led_id_range:
                     # has the led been detected? i.e. is it in the list of 3d leds
                     if not any(led.led_id == led_id for led in leds):

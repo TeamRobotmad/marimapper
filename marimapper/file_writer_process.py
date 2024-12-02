@@ -1,11 +1,13 @@
 from multiprocessing import Process, Queue, Event
 import time
-from marimapper.file_tools import write_3d_leds_to_file, write_2d_leds_to_file
+from marimapper.file_tools import write_3d_leds_to_file, write_2d_leds_to_file, load_3d_led_map
 from pathlib import Path
 import os
 
-from marimapper.led import LED2D
+from marimapper.led import LED2D, LED3D
+from multiprocessing import get_logger
 
+logger = get_logger()
 
 class FileWriterProcess(Process):
 
@@ -27,6 +29,9 @@ class FileWriterProcess(Process):
 
     def get_3d_input_queue(self):
         return self._input_queue_3d
+
+    def get_leds(self) -> list[LED3D]:
+        return load_3d_led_map(self._base_path / "led_map_3d.csv")
 
     def get_new_filename(self) -> Path:
         string_time = time.strftime("%Y%m%d-%H%M%S")

@@ -59,9 +59,6 @@ class SFM(Process):
     def stop(self):
         self._exit_event.set()
 
-    def get_leds3d(self):
-        return self.leds_3d
-
     def run(self):
 
         update_required = False
@@ -79,22 +76,22 @@ class SFM(Process):
             if update_required:
                 update_required = False
 
-                self.leds_3d = sfm(leds_2d)
+                leds_3d = sfm(leds_2d)
 
-                if len(self.leds_3d) == 0:
+                if len(leds_3d) == 0:
                     logger.info("Failed to reconstruct any leds")
                     continue
 
-                rescale(self.leds_3d)
+                rescale(leds_3d)
 
-                fill_gaps(self.leds_3d)
+                fill_gaps(leds_3d)
 
-                recenter(self.leds_3d)
+                recenter(leds_3d)
 
-                add_normals(self.leds_3d)
+                add_normals(leds_3d)
 
                 for queue in self._output_queues:
-                    queue.put(self.leds_3d)
+                    queue.put(leds_3d)
 
             else:
                 time.sleep(1)

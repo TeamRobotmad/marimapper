@@ -1,8 +1,8 @@
 import os
+import numpy as np
 from marimapper.led import Point2D, LED3D, LED2D
 import typing
 from pathlib import Path
-
 
 def load_detections(filename: os.path, view_id) -> typing.Optional[list[LED2D]]:
 
@@ -81,3 +81,45 @@ def write_3d_leds_to_file(leds: list[LED3D], filename: Path):
 
     with open(filename, "w") as f:
         f.write("\n".join(lines))
+
+
+# load the 3d led map from a file
+def load_3d_led_map(filename: os.path) -> list[LED3D]:
+
+    if not os.path.exists(filename):
+        return []
+
+    with open(filename, "r") as f:
+        lines = f.readlines()
+
+    headings = lines[0].strip().split(",")
+
+    if headings != ["index", "x", "y", "z", "xn", "yn", "zn", "error"]:
+        return []
+
+    leds = []
+
+    for i in range(1, len(lines)):
+
+        line = lines[i].strip().split(",")
+
+        try:
+            index = int(line[0])
+            x = float(line[1])
+            y = float(line[2])
+            z = float(line[3])
+            xn = float(line[4])
+            yn = float(line[5])
+            zn = float(line[6])
+            error = float(line[7])
+        except (IndexError, ValueError):
+            continue
+
+        led = LED3D(index)
+        led.point.set_position(x, y, z)
+        led.point.normal = np.array([xn, yn, zn])
+        led.point.error = error
+
+        leds.append(led)
+
+    return leds
