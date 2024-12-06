@@ -46,6 +46,7 @@ class SFM(Process):
         self._output_queues: list[Queue] = []
         self._exit_event = Event()
         self.leds_3d = []
+        self.busy = False
 
     def get_input_queue(self) -> Queue:
         return self._input_queue
@@ -59,6 +60,9 @@ class SFM(Process):
     def stop(self):
         self._exit_event.set()
 
+    def is_busy(self):
+        return self.busy
+
     def run(self):
 
         update_required = False
@@ -68,6 +72,7 @@ class SFM(Process):
         while not self._exit_event.is_set():
 
             while not self._input_queue.empty():
+                self.busy = True
                 led: LED2D = self._input_queue.get()
                 if led.point is not None:
                     leds_2d.append(led)
@@ -84,7 +89,7 @@ class SFM(Process):
 
                 rescale(leds_3d)
 
-                fill_gaps(leds_3d)
+                fill_gaps(leds_3d, max_distance=1.1, max_missing=2)
 
                 recenter(leds_3d)
 
@@ -94,6 +99,7 @@ class SFM(Process):
                     queue.put(leds_3d)
 
             else:
+                self.busy = False
                 time.sleep(1)
 
         # clear the queues, don't ask why.

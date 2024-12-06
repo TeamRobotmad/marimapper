@@ -11,6 +11,7 @@ from marimapper.utils import get_user_confirmation
 from marimapper.visualize_process import VisualiseProcess
 from marimapper.led import last_view
 from marimapper.file_writer_process import FileWriterProcess
+import time
 
 logger = get_logger()
 
@@ -86,9 +87,19 @@ class Scanner:
         logger.debug("scanner closed")
 
     def mainloop(self):
-
         while True:
+            # Wait for other processes to run so that missing leds can be detected accurately
+            time.sleep(1)
+            if not self.detector.get_input_queue().empty():
+                continue
+            if not self.sfm.get_input_queue().empty():
+                continue
+            if not self.file_writer.get_3d_input_queue().empty():
+                continue
+            if self.sfm.is_busy():
+                continue
 
+            infill_led_list = []
             if self.infill:
                 # use the backed to highlight the leds, in the range, which have not been detected
                 leds = self.file_writer.get_leds()
@@ -97,12 +108,16 @@ class Scanner:
                     if not any(led.led_id == led_id for led in leds):
                         # if NOT then show it to aid user in targeting camera vies of the missing leds
                         self.detector.show(led_id)
+                        # remember that this led has been shown
+                        infill_led_list.append(led_id)
+                # log the number of missing leds
+                logger.info(f"Missing {len(infill_led_list)} LEDs")
 
             start_scan = get_user_confirmation("Start scan? [y/n]: ")
 
             if self.infill:
                 # Ensure all LEDs start in the off state
-                for led_id in self.led_id_range:
+                for led_id in infill_led_list:
                     self.detector.hide(led_id)
 
             if not start_scan:
@@ -115,6 +130,7 @@ class Scanner:
                 )
                 continue
 
+            print("Starting scan")
             for led_id in self.led_id_range:
                 self.detector.detect(led_id, self.current_view)
 
